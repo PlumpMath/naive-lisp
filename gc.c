@@ -205,3 +205,7 @@ bool eq(Cell *a, Cell *b) {
 
 	return false;
 }
+
+Cell *cons(Cell *value, Cell *list) {
+	return make_pair(value, list);
+}

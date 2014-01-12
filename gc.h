@@ -54,4 +54,6 @@ bool eq(Cell *a, Cell *b);
 
 void print_cell(Cell *cell, int depth);
 
+Cell *cons(Cell *value, Cell *list);
+
 #endif
