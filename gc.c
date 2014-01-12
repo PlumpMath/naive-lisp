@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
+#include <string.h>
 
 #define KNRM  "\x1B[0m"
 #define KRED  "\x1B[31m"
@@ -197,7 +198,7 @@ bool eq(Cell *a, Cell *b) {
 		return a->value == b->value;
 	}
 	else if(a->type == 's') {
-		return a->name == b->name;
+		return !strcmp(a->name, b->name);
 	}
 	else if(a->type == 'p') {
 		return eq(a->first, b->first) && eq(a->rest, b->rest);

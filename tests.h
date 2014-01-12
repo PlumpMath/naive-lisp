@@ -16,7 +16,10 @@ void test1() {
 		           	    cons(make_int(30), 
 		           	    	 nil)));
 	
-	print_cell(eval(e, global_env), 0);
+	Cell *result = eval(e, global_env);
+	print_cell(result, 0);
+
+	assert(result->value == 50);
 
 	maybe_run_gc();
 }
@@ -52,7 +55,10 @@ void test3() {
 	assoc(global_env, make_symbol("f"), l);
 
 	Cell *e = cons(make_symbol("f"), cons(make_int(55), nil));
-	print_cell(eval(e, global_env), 0);
+	Cell *result = eval(e, global_env);
+	print_cell(result, 0);
+
+	assert(result->value == 1055);
 
 	maybe_run_gc();
 }
@@ -66,7 +72,10 @@ void test4() {
 	assoc(global_env, make_symbol("+"), make_prim_op(plus, "plus"));
 
 	Cell *e = cons(make_symbol("+"), cons(make_int(55), cons(make_int(20), nil)));
-	print_cell(eval(e, global_env), 0);
+	Cell *result = eval(e, global_env);
+	print_cell(result, 0);
+
+	assert(result->value == 75);
 
 	maybe_run_gc();
 }
@@ -79,6 +88,10 @@ void test5() {
 
 	Cell *list = cons(make_int(1), cons(make_int(2), cons(make_int(3), nil)));
 	Cell *result = evlis(list, global_env);
+
+	assert(result->first->value == 1);	
+	assert(result->rest->first->value == 2);
+	assert(result->rest->rest->first->value == 3);
 
 	print_cell(result, 0);
 }
