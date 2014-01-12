@@ -19,12 +19,9 @@ static int max_cell_count;
 static Cell *root;
 
 void print_cell(Cell *cell, int depth) {
-	//assert(cell);
+	assert(cell);
 
-	if(cell == NULL) {
-		printf("NULL");
-	}
-	else if(cell == nil) {
+	if(cell == nil) {
 		printf("nil");
 	}
 	else if(cell->type == 'p') {
@@ -42,6 +39,12 @@ void print_cell(Cell *cell, int depth) {
 	}
 	else if(cell->type == 'o') {
 		printf("prim_op<%s>", cell->name);
+	}
+	else if(cell->type == 'l') {
+		printf("[λ");
+		print_cell(cell->lambda->params, depth);
+		print_cell(cell->lambda->body, depth);
+		printf("]");
 	}
 
 	if(depth == 0) {
@@ -147,6 +150,19 @@ Cell* make_prim_op(proc f, char *name) {
 	o->name = name;
 
 	return o;	
+}
+
+Cell* make_lambda(Cell *params, Cell *body, Cell *env) {
+	Cell* o = make_Cell('l');
+
+	Lambda *l = (Lambda*)malloc(sizeof(Lambda));
+	l->params = params;
+	l->body = body;
+	l->env = env;
+
+	o->lambda = l;
+
+	return o;
 }
 
 Cell* init_gc() {

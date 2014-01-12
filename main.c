@@ -29,26 +29,11 @@ Cell *make_env(Cell *root) {
 	return make_pair(nil, root);
 }
 
-Cell *extend_env(Cell *parent, Cell *symbols, Cell *values) {
-	return parent;
-}
-
-Cell *lookup(Cell *env, Cell *symbol) {
-	Cell *node = env->first;
-	again:
-	if(node->first && eq(node->first->first, symbol)) {
-		return node->first->rest;
-	}
-	if(node->rest) {
-		node = node->rest;
-		goto again;
-	}
-	printf("Can't find symbol %s in environment\n", symbol->name);
-	return nil;
-}
-
 void print_env(Cell *env) {
+	assert(env);
+
 	printf("Printing environment:\n");
+	env = env->first;
 	again:
 	if(env->first) {
 		print_cell(env->first, 0);
@@ -58,41 +43,137 @@ void print_env(Cell *env) {
 		goto again;
 	}
 	printf("\n");
+	if(env->rest) {
+		printf("parent env:");
+		print_env(env->rest);
+	}
 }
 
-void assoc(Cell *old_env, Cell *symbol, Cell *value) {
+Cell *lookup(Cell *env, Cell *symbol) {
+	assert(env);
+	assert(symbol);
+
+	Cell *node = env->first;
+
+	if(node == NULL) {
+		printf("environment is NULL\n");
+		exit(1);
+	}
+
+	//printf("Looking up %s in env:\n", symbol->name);
+	//print_env(env); 
+
+	again:
+	if(node->first && eq(node->first->first, symbol)) {
+		return node->first->rest;
+	}
+	else if(node->rest) {
+		node = node->rest;
+		goto again;
+	}
+
+	if(env->rest) {
+		return lookup(env->rest, symbol);
+	} else {
+		printf("Can't find symbol %s in environment\n", symbol->name);
+		return nil;
+	}
+}
+
+void assoc(Cell *env, Cell *symbol, Cell *value) {
+	assert(env);
+	assert(symbol);
+	assert(value);
+
 	Cell *binding = make_pair(symbol, value);
-	old_env->first = cons(binding, old_env->first);
+	env->first = cons(binding, env->first);
+}
+
+Cell *extend(Cell *env, Cell *symbols, Cell *values) {
+	assert(env);
+	assert(symbols);
+	assert(values);
+
+	Cell *new_env = make_env(env);
+
+	// printf("symbols: \n");
+	// print_cell(symbols, 0);
+
+	// printf("values: \n");
+	// print_cell(values, 0);
+
+	while(!eq(symbols, nil) && !eq(values, nil)) {
+		assoc(new_env, symbols->first, values->first);
+		symbols = symbols->rest;
+		values = values->rest;
+	}
+
+	return new_env;
 }
 
 Cell *eval(Cell *exp, Cell *env);
 
 Cell *evlis(Cell *list, Cell *env) {
-	//Cell *new_list = nil;
-	//new_list = cons(eval(list->first, env)
-	return list;
+	assert(list);
+	assert(env);
+
+	Cell *new_list = nil;
+	while(!eq(list, nil)) {
+		new_list = cons(eval(list->first, env), new_list);
+		list = list->rest;
+	}
+
+	//printf("New list: \n");
+	//print_cell(new_list, 0);
+
+	return new_list;
 }
 
 Cell *eval(Cell *exp, Cell *env) {
-	if(exp->type == 'i') {
+	assert(exp);
+	assert(env);
+
+	//printf("EVAL:\n");
+	//print_cell(exp, 0);
+
+	if(exp->type == 'i' || exp->type == 'o' || exp->type == 'l') {
 		return exp;
 	}
 	else if(exp->type == 's') {
 		Cell *val = lookup(env, exp);
+		//printf("It was: \n");
+		//print_cell(val, 0);
 		return val;
 	}
 	else if(exp->type == 'p') {
-		proc *f = eval(exp->first, env)->prim_op;
+		//printf("Proc...\n");
+		Cell *first = eval(exp->first, env);
+		//printf("Args\n");
 		Cell *args = evlis(exp->rest, env);
-		//printf("Args:\n");
-		//print_cell(args, 0);
-		Cell *result = f(args);
-		return result;
+		if(first->type == 'o') {
+			//printf("It's a prim_op\n");
+			proc *f = first->prim_op;
+			Cell *result = f(args);
+			return result;
+		}
+		else if (first->type == 'l') {
+			//printf("It's a lambda\n");
+			Lambda *l = first->lambda;
+			Cell *lambda_env = extend(env, l->params, args);
+			Cell *result = eval(l->body, lambda_env);
+			return result;
+		}
+		else {
+			printf("Not a function:\n");
+			print_cell(first, 0);
+		}
 	}
 	return nil;
 }
 
 Cell *plus(Cell *args) {
+	assert(args);
+
 	//printf("Calling plus\n");
 	int sum = 0;
 	while(1) {
@@ -107,8 +188,7 @@ Cell *plus(Cell *args) {
 	return make_int(sum);
 }
 
-int main(int argc, char const *argv[])
-{
+void test() {
 	init_gc();
 	
 	Cell *global_env = make_env(nil);
@@ -139,3 +219,60 @@ int main(int argc, char const *argv[])
 
 	maybe_run_gc();
 }
+
+void test2() {
+	init_gc();
+	
+	Cell *global_env = make_env(nil);
+	add_to_root(global_env);
+
+	assoc(global_env, make_symbol("a"), make_int(42));
+	assoc(global_env, make_symbol("b"), make_int(100));
+
+	Cell *sub_env = make_env(global_env);
+	assoc(sub_env, make_symbol("a"), make_int(200));
+
+	printf("a = ");
+	print_cell(lookup(sub_env, make_symbol("a")), 0);
+
+	printf("b = ");
+	print_cell(lookup(sub_env, make_symbol("b")), 0);
+}
+
+void test3() {
+	init_gc();
+	
+	Cell *global_env = make_env(nil);
+	add_to_root(global_env);
+
+	assoc(global_env, make_symbol("+"), make_prim_op(plus, "plus"));
+
+	Cell *l = make_lambda(cons(make_symbol("x"), nil), cons(make_symbol("+"), cons(make_symbol("x"), cons(make_int(1000), nil))), global_env);
+	assoc(global_env, make_symbol("f"), l);
+
+	Cell *e = cons(make_symbol("f"), cons(make_int(55), nil));
+	print_cell(eval(e, global_env), 0);
+}
+
+void test4() {
+	init_gc();
+	
+	Cell *global_env = make_env(nil);
+	add_to_root(global_env);
+
+	assoc(global_env, make_symbol("+"), make_prim_op(plus, "plus"));
+
+	Cell *e = cons(make_symbol("+"), cons(make_int(55), cons(make_int(20), nil)));
+	print_cell(eval(e, global_env), 0);
+}
+
+int main(int argc, char const *argv[])
+{
+	test3();
+}
+
+
+
+
+
+

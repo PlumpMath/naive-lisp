@@ -7,23 +7,32 @@ struct Cell;
 
 typedef struct Cell *proc(struct Cell *args);
 
+typedef struct Lambda {
+	struct Cell *params;
+	struct Cell *body;
+	struct Cell *env;
+} Lambda;
+
 typedef struct Cell {
 	char type;
 	bool collect;
 	struct Cell* next;
 
-	//pair ('p')
+	// pair ('p')
 	struct Cell* first;
 	struct Cell* rest;
 
-	//int ('i')
+	// int ('i')
 	int value;
 
-	//symbol ('s')
+	// symbol ('s')
 	char *name;
 
-	//primitive operation ('o')
+	// primitive operation ('o')
 	proc *prim_op; 
+
+	// lambda ('l') ADD GARBAGE COLLECTION!
+	Lambda *lambda;
 } Cell;
 
 Cell *nil;
@@ -39,6 +48,7 @@ Cell* make_int(int value);
 Cell* make_pair(Cell *first, Cell *rest);
 Cell* make_symbol(char *name);
 Cell* make_prim_op(proc f, char *name);
+Cell* make_lambda(Cell *params, Cell *body, Cell *env);
 
 bool eq(Cell *a, Cell *b);
 
