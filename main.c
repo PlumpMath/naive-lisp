@@ -113,6 +113,15 @@ Cell *extend(Cell *env, Cell *symbols, Cell *values) {
 
 Cell *eval(Cell *exp, Cell *env);
 
+Cell *reverse(Cell *list) {
+	Cell *reversed = nil;
+	while(!eq(list, nil)) {
+		reversed = cons(list->first, reversed);
+		list = list->rest;
+	}
+	return reversed;
+}
+
 Cell *evlis(Cell *list, Cell *env) {
 	assert(list);
 	assert(env);
@@ -123,10 +132,7 @@ Cell *evlis(Cell *list, Cell *env) {
 		list = list->rest;
 	}
 
-	//printf("New list: \n");
-	//print_cell(new_list, 0);
-
-	return new_list;
+	return reverse(new_list);
 }
 
 Cell *eval(Cell *exp, Cell *env) {
@@ -188,7 +194,7 @@ Cell *plus(Cell *args) {
 	return make_int(sum);
 }
 
-void test() {
+void test1() {
 	init_gc();
 	
 	Cell *global_env = make_env(nil);
@@ -198,24 +204,12 @@ void test() {
 	assoc(global_env, make_symbol("b"), make_int(100));
 	assoc(global_env, make_symbol("+"), make_prim_op(plus, "plus"));
 
-	// printf("Root: ");
-	// print_cell(get_root());
-	// printf("\n");
-
-	//print_env(global_env);
-
-	// printf("a\n");
-	// print_cell(eval(make_symbol("a"), global_env));
-	// printf("\nb\n");
-	// print_cell(eval(make_symbol("b"), global_env));
-	// printf("\n");
-
 	Cell *e = cons(make_symbol("+"), 
 		           cons(make_int(20), 
 		           	    cons(make_int(30), 
 		           	    	 nil)));
+	
 	print_cell(eval(e, global_env), 0);
-	//print_cell(nil, 0);
 
 	maybe_run_gc();
 }
@@ -252,6 +246,8 @@ void test3() {
 
 	Cell *e = cons(make_symbol("f"), cons(make_int(55), nil));
 	print_cell(eval(e, global_env), 0);
+
+	maybe_run_gc();
 }
 
 void test4() {
@@ -264,11 +260,29 @@ void test4() {
 
 	Cell *e = cons(make_symbol("+"), cons(make_int(55), cons(make_int(20), nil)));
 	print_cell(eval(e, global_env), 0);
+
+	maybe_run_gc();
+}
+
+void test5() {
+	init_gc();
+	
+	Cell *global_env = make_env(nil);
+	add_to_root(global_env);
+
+	Cell *list = cons(make_int(1), cons(make_int(2), cons(make_int(3), nil)));
+	Cell *result = evlis(list, global_env);
+
+	print_cell(result, 0);
 }
 
 int main(int argc, char const *argv[])
 {
-	test3();
+	// test1();
+	// test2();
+	// test3();
+	// test4();
+	// test5();
 }
 
 
