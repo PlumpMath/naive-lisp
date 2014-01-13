@@ -91,6 +91,7 @@ void test6() {
 	// 	printf("Token: %s\n", token);
 	// }
 	
+	/*
 	Cell *form = read();
 	printf("Form: ");
 	if(form == NULL) {
@@ -99,6 +100,15 @@ void test6() {
 	else {
 		print_cell(form, 0);
 		printf("Type: %c\n", form->type);
+	}*/
+
+	Cell *global_env = make_env(nil);
+	add_to_root(global_env);
+
+	assoc(global_env, make_symbol("+"), make_prim_op(plus, "plus"));
+
+	while(1) {
+		print_cell(eval(read(), global_env), 0);
 	}
 }
 
